@@ -28,6 +28,10 @@ class CeilingKinectApp : public App {
 	double mThresh;
 	double mMaxVal;
 
+	// colors for the shapes
+	vector<Color> shapeColors;
+	int colorIdx;
+
 private:
 	Kinect2::DeviceRef mDevice;
 
@@ -110,6 +114,9 @@ void CeilingKinectApp::prepareSettings(Settings* settings)
 
 void CeilingKinectApp::setup()
 {
+
+	ci::app::console() << "HERE" << endl;
+
 	shapeUID = 0;
 
 	// set the threshold to ignore all black pixels and pixels that are far away from the camera
@@ -117,6 +124,16 @@ void CeilingKinectApp::setup()
 	mFarLimit = 5000;
 	mThresh = 0.0;
 	mMaxVal = 255.0;
+
+	// colors for each shape
+	shapeColors.push_back(Color(1, 0, 0));	// red
+	shapeColors.push_back(Color(1, 1, 0));	// yellow
+	shapeColors.push_back(Color(0, 1, 0));	// green
+	shapeColors.push_back(Color(0, 0, 1));	// blue
+	shapeColors.push_back(Color(1, 0, 1));	// purple
+	shapeColors.push_back(Color(1, 1, 1));	// white
+
+	colorIdx = 0;
 }
 
 void CeilingKinectApp::update()
@@ -177,6 +194,8 @@ void CeilingKinectApp::update()
 				// assign it an unique ID
 				mShapes[i].ID = shapeUID;
 				mShapes[i].lastFrameSeen = ci::app::getElapsedFrames();
+				mShapes[i].color = shapeColors[colorIdx];
+				colorIdx++;
 				// add this new shape to tracked shapes
 				mTrackedShapes.push_back(mShapes[i]);
 				shapeUID++;
@@ -207,6 +226,8 @@ void CeilingKinectApp::draw()
 {
 	// clear out the window with black
 	gl::clear(Color(0, 0, 0));
+	ci::app::console() << mTrackedShapes.size() << endl;
+
 
 	if (mSurfaceSubtract.getWidth() > 0) {
 		if (mTextureDepth) {
@@ -219,11 +240,24 @@ void CeilingKinectApp::draw()
 	}
 
 	// draw shapes
-	for (ContourVector::iterator iter = mContours.begin(); iter != mContours.end(); ++iter) {
+	//int idx = 0;
+	//for (ContourVector::iterator iter = mContours.begin(); iter != mContours.end(); ++iter) {
+	//	gl::begin(GL_LINE_LOOP);
+	//	for (vector<cv::Point>::iterator pt = iter->begin(); pt != iter->end(); ++pt) {
+	//		//gl::color(shapeColors[idx]);
+	//		gl::color(Color(1.0, 0.0, 0.0));
+	//		gl::vertex(fromOcv(*pt));
+	//	}
+	//	gl::end();
+	//	idx++;
+	//}
+
+	for (int i = 0; i < mTrackedShapes.size(); i++) {
 		gl::begin(GL_LINE_LOOP);
-		for (vector<cv::Point>::iterator pt = iter->begin(); pt != iter->end(); ++pt) {
-			gl::color(Color(1.0f, 0.0f, 0.0f));
-			gl::vertex(fromOcv(*pt));
+		for (int j = 0; j < mTrackedShapes[i].hull.size(); j++) {
+			gl::color(mTrackedShapes[i].color);
+			//vec2 v = fromOcv(mTrackedShapes[i].hull[j]);
+			gl::vertex(fromOcv(mTrackedShapes[i].hull[j]));
 		}
 		gl::end();
 	}
@@ -231,6 +265,12 @@ void CeilingKinectApp::draw()
 
 void CeilingKinectApp::keyDown( KeyEvent event )
 {
+	// remove all background shapes
+	if (event.getChar() == 'a') {
+		for (Shape s : mTrackedShapes) {
+			s.background = true;
+		}
+	}
 }
 
 cv::Mat CeilingKinectApp::removeBlack(cv::Mat input, short nearLimit, short farLimit)
