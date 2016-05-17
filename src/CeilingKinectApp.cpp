@@ -6,6 +6,8 @@
 #include "CinderOpenCV.h"
 #include "Shape.h"
 
+#include<math.h>
+
 using namespace ci;
 using namespace ci::app;
 using namespace std;
@@ -114,9 +116,6 @@ void CeilingKinectApp::prepareSettings(Settings* settings)
 
 void CeilingKinectApp::setup()
 {
-
-	ci::app::console() << "HERE" << endl;
-
 	shapeUID = 0;
 
 	// set the threshold to ignore all black pixels and pixels that are far away from the camera
@@ -198,6 +197,7 @@ void CeilingKinectApp::update()
 				colorIdx++;
 				// add this new shape to tracked shapes
 				mTrackedShapes.push_back(mShapes[i]);
+				ci::app::console() << "NEW SHAPE" << endl;
 				shapeUID++;
 			}
 		}
@@ -226,7 +226,7 @@ void CeilingKinectApp::draw()
 {
 	// clear out the window with black
 	gl::clear(Color(0, 0, 0));
-	ci::app::console() << mTrackedShapes.size() << endl;
+	//ci::app::console() << mTrackedShapes.size() << endl;
 
 
 	if (mSurfaceSubtract.getWidth() > 0) {
@@ -239,7 +239,6 @@ void CeilingKinectApp::draw()
 		gl::draw(mTextureDepth, mTextureDepth->getBounds());
 	}
 
-	// draw shapes
 	//int idx = 0;
 	//for (ContourVector::iterator iter = mContours.begin(); iter != mContours.end(); ++iter) {
 	//	gl::begin(GL_LINE_LOOP);
@@ -252,22 +251,28 @@ void CeilingKinectApp::draw()
 	//	idx++;
 	//}
 
-	for (int i = 0; i < mTrackedShapes.size(); i++) {
-		gl::begin(GL_LINE_LOOP);
-		for (int j = 0; j < mTrackedShapes[i].hull.size(); j++) {
-			gl::color(mTrackedShapes[i].color);
-			//vec2 v = fromOcv(mTrackedShapes[i].hull[j]);
-			gl::vertex(fromOcv(mTrackedShapes[i].hull[j]));
+	// draw shapes
+	for (Shape s: mTrackedShapes) {
+		if (!s.background) {
+			gl::begin(GL_LINE_LOOP);
+			for (int j = 0; j < s.hull.size(); j++) {
+				gl::color(s.color);
+				gl::vertex(fromOcv(s.hull[j]));
+			}
+			gl::end();
 		}
-		gl::end();
 	}
 }
 
 void CeilingKinectApp::keyDown( KeyEvent event )
 {
 	// remove all background shapes
+	ci::app::console() << event.getChar() << endl;
 	if (event.getChar() == 'a') {
+		cinder::app::console() << "KEY DOWN" << endl;
+		cinder::app::console() << mTrackedShapes.size() << endl;
 		for (Shape s : mTrackedShapes) {
+			ci::app::console() << "BACKGROUND" << endl;
 			s.background = true;
 		}
 	}
@@ -330,8 +335,10 @@ Shape* CeilingKinectApp::findNearestMatch(Shape trackedShape, vector<Shape> &sha
 
 	for (Shape &candidate : shapes) {
 		// find dist between the center of the contour and the shape
-		cv::Point distPoint = trackedShape.centroid - candidate.centroid;
-		float dist = cv::sqrt(distPoint.x * distPoint.x + distPoint.y * distPoint.y);
+		//cv::Point distPoint = trackedShape.centroid - candidate.centroid;
+		//float dist = cv::sqrt(distPoint.x * distPoint.x + distPoint.y * distPoint.y);
+		float dist = cv::sqrt(pow(trackedShape.centroid.x - candidate.centroid.x, 2) + pow(trackedShape.centroid.y - candidate.centroid.y, 2));
+		//cinder::app::console() << dist << endl;
 		if (dist > maximumDistance) {
 			continue;
 		}
