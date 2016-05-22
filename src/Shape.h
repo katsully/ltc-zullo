@@ -11,6 +11,7 @@ public:
 	cv::Point centroid;	// center point of the shape
 	bool matchFound;
 	bool moving;
+	int movementCounter;
 	bool background;
 	cinder::Color color;
 	int stillness;

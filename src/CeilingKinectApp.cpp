@@ -5,12 +5,16 @@
 #include "Kinect2.h"
 #include "CinderOpenCV.h"
 #include "Shape.h"
+#include "Osc.h"
 
 #include<math.h>
 
 using namespace ci;
 using namespace ci::app;
 using namespace std;
+
+const std::string destinationHost = "127.0.0.1";
+const uint16_t destinationPort = 8000;
 
 class CeilingKinectApp : public App {
   public:
@@ -19,6 +23,7 @@ class CeilingKinectApp : public App {
 	void setup() override;
 	void prepareSettings(Settings* settings);
 	void keyDown( KeyEvent event ) override;
+	void mouseMove(MouseEvent event) override;
 	void update() override;
 	void draw() override;
 
@@ -33,6 +38,9 @@ class CeilingKinectApp : public App {
 	// colors for the shapes
 	vector<Color> shapeColors;
 	int colorIdx;
+
+	osc::SenderUdp mSender;
+	osc::ReceiverUdp mReceiver;
 
 private:
 	Kinect2::DeviceRef mDevice;
@@ -72,13 +80,43 @@ private:
 	vector<Shape> mShapes;
 	vector<Shape> mTrackedShapes;	// store tracked shapes
 
+	ivec2 mCurrentMousePosition;
+
 	cv::Mat removeBlack(cv::Mat input, short nearLimit, short farLimit);
 	vector<Shape> getEvaluationSet(ContourVector rawContours, int minimalArea, int maxArea);
 	Shape* findNearestMatch(Shape trackedShape, vector<Shape> &shapes, float maximumDistance);
 };
 
-CeilingKinectApp::CeilingKinectApp()
+CeilingKinectApp::CeilingKinectApp() : App(), mReceiver(8000), mSender(9000, destinationHost, 8000)
+{	
+	/*mSender.bind();
+	mReceiver.bind();
+	mReceiver.listen();
+	mReceiver.setListener("/bodies",
+		[](const osc::Message &message) {
+		std::string s = "Float: " + std::to_string(message[0].flt());
+	});*/
+}
+
+void CeilingKinectApp::mouseMove(MouseEvent event)
 {
+	mCurrentMousePosition = event.getPos();
+	osc::Message msg("/blobs");
+	msg.append(mCurrentMousePosition.x);
+	msg.append(mCurrentMousePosition.y);
+
+	mSender.send(msg);
+}
+
+void CeilingKinectApp::prepareSettings(Settings* settings)
+{
+	settings->setFrameRate(60.0f);
+	settings->setWindowSize(800, 800);
+}
+
+void CeilingKinectApp::setup()
+{
+
 	mFrameRate = 0.0f;
 	mFullScreen = false;
 
@@ -106,22 +144,13 @@ CeilingKinectApp::CeilingKinectApp()
 	mParams->addParam("Maxval", &mMaxVal, "min=0.0f max=255.0f step=1.0 keyIncr=q keyDecr=w");
 	mStepSize = 10;
 	mBlurAmount = 10;
-}
 
-void CeilingKinectApp::prepareSettings(Settings* settings)
-{
-	settings->setFrameRate(60.0f);
-	settings->setWindowSize(800, 800);
-}
-
-void CeilingKinectApp::setup()
-{
 	shapeUID = 0;
 
 	// set the threshold to ignore all black pixels and pixels that are far away from the camera
 	mNearLimit = 30;
 	mFarLimit = 5000;
-	mThresh = 0.0;
+	mThresh = 10.0;
 	mMaxVal = 255.0;
 
 	// colors for each shape
@@ -171,19 +200,25 @@ void CeilingKinectApp::update()
 
 		mShapes.clear();
 		// get data that we can later compre
-		mShapes = getEvaluationSet(mApproxContours, 75, 100000);
+		mShapes = getEvaluationSet(mApproxContours, 70, 100000);
 
 		// find the nearest match for each shape
-		for (int i = 0; i < mTrackedShapes.size(); i++) {
-			Shape* nearestShape = findNearestMatch(mTrackedShapes[i], mShapes, 5000);
+		for (Shape &s: mTrackedShapes) {
+			Shape* nearestShape = findNearestMatch(s, mShapes, 9000);
 
 			// if a tracked shape was found, update that tracked shape with the new shape
 			if (nearestShape != NULL) {
 				nearestShape->matchFound = true;
-				mTrackedShapes[i].centroid = nearestShape->centroid;
-				mTrackedShapes[i].lastFrameSeen = ci::app::getElapsedFrames();
-				mTrackedShapes[i].hull.clear();
-				mTrackedShapes[i].hull = nearestShape->hull;
+				s.centroid = nearestShape->centroid;
+				s.lastFrameSeen = ci::app::getElapsedFrames();
+				s.hull.clear();
+				s.hull = nearestShape->hull;
+				if (nearestShape->moving) {
+					s.movementCounter++;
+					if (s.movementCounter > 5) {
+						s.background = false;
+					}
+				}
 			}
 		}
 
@@ -194,10 +229,11 @@ void CeilingKinectApp::update()
 				mShapes[i].ID = shapeUID;
 				mShapes[i].lastFrameSeen = ci::app::getElapsedFrames();
 				mShapes[i].color = shapeColors[colorIdx];
+				mShapes[i].background = false;
 				colorIdx++;
 				// add this new shape to tracked shapes
 				mTrackedShapes.push_back(mShapes[i]);
-				ci::app::console() << "NEW SHAPE" << endl;
+				//ci::app::console() << "NEW SHAPE" << endl;
 				shapeUID++;
 			}
 		}
@@ -207,6 +243,7 @@ void CeilingKinectApp::update()
 			if (ci::app::getElapsedFrames() - it->lastFrameSeen > 20) {
 				 // remove the tracked shape
 				it = mTrackedShapes.erase(it);
+				//cinder::app::console() << "ERASE IT BLAHHH" << endl;
 			}
 			else {
 				++it;
@@ -229,7 +266,7 @@ void CeilingKinectApp::draw()
 	//ci::app::console() << mTrackedShapes.size() << endl;
 
 
-	if (mSurfaceSubtract.getWidth() > 0) {
+	/*if (mSurfaceSubtract.getWidth() > 0) {
 		if (mTextureDepth) {
 			mTextureDepth->update(Channel32f(mSurfaceSubtract));
 		}
@@ -237,7 +274,19 @@ void CeilingKinectApp::draw()
 			mTextureDepth = gl::Texture::create(Channel32f(mSurfaceSubtract));
 		}
 		gl::draw(mTextureDepth, mTextureDepth->getBounds());
-	}
+	}*/
+
+	gl::viewport(getWindowSize());
+	gl::clear();
+	gl::setMatricesWindow(getWindowSize());
+	gl::enableAlphaBlending();
+
+	/*gl::color(Color::white());
+	if (mSurfaceColor) {
+		gl::TextureRef tex = gl::Texture::create(*mSurfaceColor);
+		gl::draw(tex, tex->getBounds(), Rectf(vec2(0.0f), getWindowCenter()));
+	}*/
+
 
 	//int idx = 0;
 	//for (ContourVector::iterator iter = mContours.begin(); iter != mContours.end(); ++iter) {
@@ -262,19 +311,35 @@ void CeilingKinectApp::draw()
 			gl::end();
 		}
 	}
+
+	mParams->draw();
 }
 
 void CeilingKinectApp::keyDown( KeyEvent event )
 {
 	// remove all background shapes
 	ci::app::console() << event.getChar() << endl;
-	if (event.getChar() == 'a') {
-		cinder::app::console() << "KEY DOWN" << endl;
+	if (event.getChar() == 'x') {
 		cinder::app::console() << mTrackedShapes.size() << endl;
-		for (Shape s : mTrackedShapes) {
+		for (Shape &s : mTrackedShapes) {
 			ci::app::console() << "BACKGROUND" << endl;
+			ci::app::console() << std::to_string(s.ID) + " background state: " + std::to_string(s.background) << endl;
 			s.background = true;
 		}
+	}
+	// send each detected shape and the x y coordinates of its centroid to the other kinect
+	else if (event.getChar() == 'p') {
+		console() << "made it here" << endl;
+		osc::Message msg("/kinect/blobs");
+		for (Shape s : mTrackedShapes) {
+			if (s.background == false) {
+				msg.append(s.ID);
+				msg.append(s.centroid.x);
+				msg.append(s.centroid.y);
+				console() << "data sent" << endl;
+			}
+		}
+		mSender.send(msg);
 	}
 }
 
@@ -333,6 +398,9 @@ Shape* CeilingKinectApp::findNearestMatch(Shape trackedShape, vector<Shape> &sha
 		return NULL;
 	}
 
+	//finalDist keeps track of the distance between the trackedShape and the chosen candidate
+	float finalDist;
+
 	for (Shape &candidate : shapes) {
 		// find dist between the center of the contour and the shape
 		//cv::Point distPoint = trackedShape.centroid - candidate.centroid;
@@ -348,6 +416,14 @@ Shape* CeilingKinectApp::findNearestMatch(Shape trackedShape, vector<Shape> &sha
 		if (dist < nearestDist) {
 			nearestDist = dist;
 			closestShape = &candidate;
+			finalDist = dist;
+		}
+	}
+
+	// if shape is moving, don't make it the background
+	if (closestShape) {
+		if (finalDist > 20) {
+			closestShape->moving = true;
 		}
 	}
 	return closestShape;
