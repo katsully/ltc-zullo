@@ -74,6 +74,7 @@ private:
 	ContourVector mContours;
 	ContourVector mApproxContours;
 	int mStepSize;
+	int minArea;
 	int mBlurAmount;
 	int shapeUID;
 
@@ -86,6 +87,7 @@ private:
 	cv::Mat removeBlack(cv::Mat input, short nearLimit, short farLimit);
 	vector<Shape> getEvaluationSet(ContourVector rawContours, int minimalArea, int maxArea);
 	Shape* findNearestMatch(Shape trackedShape, vector<Shape> &shapes, float maximumDistance);
+	float mapNum(float value, float istart, float istop, float ostart, float ostop);
 };
 
 CeilingKinectApp::CeilingKinectApp() : App(), mReceiver(8000), mSender(9000, destinationHost, 8000)
@@ -117,10 +119,14 @@ void CeilingKinectApp::prepareSettings(Settings* settings)
 
 void CeilingKinectApp::setup()
 {
+	console() << "x window size " << getWindowSize().x << endl;
+	console() << "y windows size " << getWindowSize().y << endl;
+
 	mSender.bind();
 
 	mFrameRate = 0.0f;
 	mFullScreen = false;
+	minArea = 75;
 
 	mDevice = Kinect2::Device::create();
 	mDevice->start();
@@ -144,6 +150,7 @@ void CeilingKinectApp::setup()
 	mParams = params::InterfaceGl::create("Params", ivec2(255, 200));
 	mParams->addParam("Thresh", &mThresh, "min=0.0f max=255.0f step=1.0 keyIncr=a keyDecr=s");
 	mParams->addParam("Maxval", &mMaxVal, "min=0.0f max=255.0f step=1.0 keyIncr=q keyDecr=w");
+	mParams->addParam("Min Area", &minArea, "min=0.0f max=200.0f step=1.0 keyIncr=z keyDecr=x");
 	mStepSize = 10;
 	mBlurAmount = 10;
 
@@ -202,7 +209,7 @@ void CeilingKinectApp::update()
 
 		mShapes.clear();
 		// get data that we can later compre
-		mShapes = getEvaluationSet(mApproxContours, 70, 100000);
+		mShapes = getEvaluationSet(mApproxContours, minArea, 100000);
 
 		// find the nearest match for each shape
 		for (Shape &s: mTrackedShapes) {
@@ -319,10 +326,6 @@ void CeilingKinectApp::draw()
 
 void CeilingKinectApp::keyDown( KeyEvent event )
 {
-	char key = event.getChar();
-	osc::Message msg("mousemove/1");
-	msg.append(key);
-	mSender.send(msg);
 	// remove all background shapes
 	ci::app::console() << event.getChar() << endl;
 	if (event.getChar() == 'x') {
@@ -340,8 +343,10 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 		for (Shape s : mTrackedShapes) {
 			if (s.background == false) {
 				msg.append(s.ID);
-				msg.append(s.centroid.x);
-				msg.append(s.centroid.y);
+				//msg.append(s.centroid.x);
+				msg.append(mapNum(s.centroid.x, 0, getWindowSize().x, 0.0, 1.0));
+				//msg.append(s.centroid.y);
+				msg.append(mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
 				console() << msg << endl;
 				console() << "data sent" << endl;
 			}
@@ -434,6 +439,10 @@ Shape* CeilingKinectApp::findNearestMatch(Shape trackedShape, vector<Shape> &sha
 		}
 	}
 	return closestShape;
+}
+
+float CeilingKinectApp::mapNum(float value, float istart, float istop, float ostart, float ostop) {
+	return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
 }
 
 CINDER_APP( CeilingKinectApp, RendererGl )
