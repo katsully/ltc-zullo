@@ -13,8 +13,9 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-const std::string destinationHost = "127.0.0.1";
-const uint16_t destinationPort = 8000;
+const std::string destinationHost = "172.16.224.212";	// this MUST match the ip address of the computer you are
+														// sending data to
+//const uint16_t destinationPort = 8000;
 
 class CeilingKinectApp : public App {
   public:
@@ -116,6 +117,7 @@ void CeilingKinectApp::prepareSettings(Settings* settings)
 
 void CeilingKinectApp::setup()
 {
+	mSender.bind();
 
 	mFrameRate = 0.0f;
 	mFullScreen = false;
@@ -317,6 +319,10 @@ void CeilingKinectApp::draw()
 
 void CeilingKinectApp::keyDown( KeyEvent event )
 {
+	char key = event.getChar();
+	osc::Message msg("mousemove/1");
+	msg.append(key);
+	mSender.send(msg);
 	// remove all background shapes
 	ci::app::console() << event.getChar() << endl;
 	if (event.getChar() == 'x') {
@@ -336,6 +342,7 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 				msg.append(s.ID);
 				msg.append(s.centroid.x);
 				msg.append(s.centroid.y);
+				console() << msg << endl;
 				console() << "data sent" << endl;
 			}
 		}
