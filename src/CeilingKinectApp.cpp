@@ -15,6 +15,7 @@ using namespace std;
 
 const std::string destinationHost = "172.16.224.212";	// this MUST match the ip address of the computer you are
 														// sending data to
+const std::string destinationHost2 = "192.168.1.5";		// Moon's IP address
 //const uint16_t destinationPort = 8000;
 
 class CeilingKinectApp : public App {
@@ -90,7 +91,7 @@ private:
 	float mapNum(float value, float istart, float istop, float ostart, float ostop);
 };
 
-CeilingKinectApp::CeilingKinectApp() : App(), mReceiver(8000), mSender(9000, destinationHost, 8000)
+CeilingKinectApp::CeilingKinectApp() : App(), mReceiver(8000), mSender(9000, destinationHost2, 12345)
 {	
 	/*mSender.bind();
 	mReceiver.bind();
@@ -103,12 +104,12 @@ CeilingKinectApp::CeilingKinectApp() : App(), mReceiver(8000), mSender(9000, des
 
 void CeilingKinectApp::mouseMove(MouseEvent event)
 {
-	mCurrentMousePosition = event.getPos();
+	/*mCurrentMousePosition = event.getPos();
 	osc::Message msg("/blobs");
 	msg.append(mCurrentMousePosition.x);
 	msg.append(mCurrentMousePosition.y);
 
-	mSender.send(msg);
+	mSender.send(msg);*/
 }
 
 void CeilingKinectApp::prepareSettings(Settings* settings)
@@ -150,7 +151,7 @@ void CeilingKinectApp::setup()
 	mParams = params::InterfaceGl::create("Params", ivec2(255, 200));
 	mParams->addParam("Thresh", &mThresh, "min=0.0f max=255.0f step=1.0 keyIncr=a keyDecr=s");
 	mParams->addParam("Maxval", &mMaxVal, "min=0.0f max=255.0f step=1.0 keyIncr=q keyDecr=w");
-	mParams->addParam("Min Area", &minArea, "min=0.0f max=200.0f step=1.0 keyIncr=z keyDecr=x");
+	mParams->addParam("Min Area", &minArea, "min=0.0f max=200.0f step=1.0 keyIncr=k keyDecr=l");
 	mStepSize = 10;
 	mBlurAmount = 10;
 
@@ -321,6 +322,18 @@ void CeilingKinectApp::draw()
 		}
 	}
 
+	osc::Message msg("/kinect");
+	int idx = 0;
+	for (Shape s : mTrackedShapes) {
+		if (s.background == false) {
+			msg.append(idx);
+			msg.append(mapNum(s.centroid.x, 0, getWindowSize().x, 0.0, 1.0));
+			msg.append(mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
+			idx++;
+		}
+	}
+	mSender.send(msg);
+
 	mParams->draw();
 }
 
@@ -440,6 +453,8 @@ Shape* CeilingKinectApp::findNearestMatch(Shape trackedShape, vector<Shape> &sha
 	}
 	return closestShape;
 }
+
+//192.168.1.2
 
 float CeilingKinectApp::mapNum(float value, float istart, float istop, float ostart, float ostop) {
 	return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
