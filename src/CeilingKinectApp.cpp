@@ -15,7 +15,7 @@ using namespace std;
 
 const std::string destinationHost = "172.16.224.212";	// this MUST match the ip address of the computer you are
 														// sending data to
-const std::string destinationHost2 = "192.168.1.5";		// Moon's IP address
+const std::string destinationHost2 = "192.168.1.2";		// Moon's IP address
 //const uint16_t destinationPort = 8000;
 
 class CeilingKinectApp : public App {
@@ -127,7 +127,7 @@ void CeilingKinectApp::setup()
 
 	mFrameRate = 0.0f;
 	mFullScreen = false;
-	minArea = 75;
+	minArea = 190;
 
 	mDevice = Kinect2::Device::create();
 	mDevice->start();
@@ -152,6 +152,7 @@ void CeilingKinectApp::setup()
 	mParams->addParam("Thresh", &mThresh, "min=0.0f max=255.0f step=1.0 keyIncr=a keyDecr=s");
 	mParams->addParam("Maxval", &mMaxVal, "min=0.0f max=255.0f step=1.0 keyIncr=q keyDecr=w");
 	mParams->addParam("Min Area", &minArea, "min=0.0f max=200.0f step=1.0 keyIncr=k keyDecr=l");
+	//mParams->addParam("Max", &mFarLimit, "min=0.0f max=4000.0f step=10.0 keyIncr=p keyDecr=o");
 	mStepSize = 10;
 	mBlurAmount = 10;
 
@@ -159,7 +160,7 @@ void CeilingKinectApp::setup()
 
 	// set the threshold to ignore all black pixels and pixels that are far away from the camera
 	mNearLimit = 30;
-	mFarLimit = 5000;
+	mFarLimit = 2446;
 	mThresh = 10.0;
 	mMaxVal = 255.0;
 
@@ -313,6 +314,7 @@ void CeilingKinectApp::draw()
 	// draw shapes
 	for (Shape s: mTrackedShapes) {
 		if (!s.background) {
+			//console() << "shape~~~~~~~~" << endl;
 			gl::begin(GL_LINE_LOOP);
 			for (int j = 0; j < s.hull.size(); j++) {
 				gl::color(s.color);
@@ -322,17 +324,18 @@ void CeilingKinectApp::draw()
 		}
 	}
 
-	osc::Message msg("/kinect");
 	int idx = 0;
 	for (Shape s : mTrackedShapes) {
 		if (s.background == false) {
+			osc::Message msg("/kinect");
 			msg.append(idx);
 			msg.append(mapNum(s.centroid.x, 0, getWindowSize().x, 0.0, 1.0));
-			msg.append(mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
+			msg.append(1-mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
+			//console() << msg << endl;
+			mSender.send(msg);
 			idx++;
 		}
 	}
-	mSender.send(msg);
 
 	mParams->draw();
 }
@@ -350,22 +353,22 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 		}
 	}
 	// send each detected shape and the x y coordinates of its centroid to the other kinect
-	else if (event.getChar() == 'p') {
-		console() << "made it here" << endl;
-		osc::Message msg("/kinect/blobs");
-		for (Shape s : mTrackedShapes) {
-			if (s.background == false) {
-				msg.append(s.ID);
-				//msg.append(s.centroid.x);
-				msg.append(mapNum(s.centroid.x, 0, getWindowSize().x, 0.0, 1.0));
-				//msg.append(s.centroid.y);
-				msg.append(mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
-				console() << msg << endl;
-				console() << "data sent" << endl;
-			}
-		}
-		mSender.send(msg);
-	}
+	//else if (event.getChar() == 'p') {
+	//	console() << "made it here" << endl;
+	//	osc::Message msg("/kinect/blobs");
+	//	for (Shape s : mTrackedShapes) {
+	//		if (s.background == false) {
+	//			msg.append(s.ID);
+	//			//msg.append(s.centroid.x);
+	//			msg.append(mapNum(s.centroid.x, 0, getWindowSize().x, 0.0, 1.0));
+	//			//msg.append(s.centroid.y);
+	//			msg.append(mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
+	//			console() << msg << endl;
+	//			console() << "data sent" << endl;
+	//		}
+	//	}
+	//	mSender.send(msg);
+	//}
 }
 
 cv::Mat CeilingKinectApp::removeBlack(cv::Mat input, short nearLimit, short farLimit)
