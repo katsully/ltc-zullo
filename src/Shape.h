@@ -11,6 +11,7 @@ public:
 	cv::Point centroid;	// center point of the shape
 	bool matchFound;
 	bool moving;
+	bool selected;
 	int movementCounter;
 	bool background;
 	cinder::Color color;
@@ -18,5 +19,6 @@ public:
 	float motion;
 	cv::vector<cv::Point> hull;	// stores point representing the hull of the shape
 	int lastFrameSeen;
+
 };
 

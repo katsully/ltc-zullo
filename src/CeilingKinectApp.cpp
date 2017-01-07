@@ -19,6 +19,7 @@ class CeilingKinectApp : public App {
 	void setup() override;
 	void prepareSettings(Settings* settings);
 	void keyDown(KeyEvent event) override;
+	void mouseDown(MouseEvent event) override;
 	void update() override;
 	void draw() override;
 
@@ -137,7 +138,7 @@ void CeilingKinectApp::setup()
 	shapeColors.push_back(Color(0, 1, 0));	// green
 	shapeColors.push_back(Color(0, 0, 1));	// blue
 	shapeColors.push_back(Color(1, 0, 1));	// purple
-	shapeColors.push_back(Color(1, 1, 1));	// white
+	//shapeColors.push_back(Color(1, 1, 1));	// white
 
 	colorIdx = 0;
 }
@@ -211,7 +212,7 @@ void CeilingKinectApp::update()
 				colorIdx++;
 				// add this new shape to tracked shapes
 				mTrackedShapes.push_back(mShapes[i]);
-				//ci::app::console() << "NEW SHAPE" << endl;
+				ci::app::console() << "NEW SHAPE" << endl;
 				shapeUID++;
 			}
 		}
@@ -241,8 +242,6 @@ void CeilingKinectApp::draw()
 {
 	// clear out the window with black
 	gl::clear(Color(0, 0, 0));
-	//ci::app::console() << mTrackedShapes.size() << endl;
-
 
 	/*if (mSurfaceSubtract.getWidth() > 0) {
 		if (mTextureDepth) {
@@ -285,7 +284,13 @@ void CeilingKinectApp::draw()
 		if (!s.background) {
 			gl::begin(GL_TRIANGLE_STRIP);
 			for (int j = 0; j < s.hull.size(); j++) {
-				gl::color(s.color);
+				if (s.selected == true) {
+					gl::color(Color(1, 1, 1));
+					console() << "drawing white" << endl;
+				}
+				else {
+					gl::color(s.color);
+				}
 				gl::vertex(fromOcv(s.hull[j]));
 			}
 			gl::end();
@@ -305,6 +310,30 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 			ci::app::console() << "BACKGROUND" << endl;
 			ci::app::console() << std::to_string(s.ID) + " background state: " + std::to_string(s.background) << endl;
 			s.background = true;
+		}
+	}
+}
+
+void CeilingKinectApp::mouseDown(MouseEvent event)
+{
+	vec2 mouseLoc = event.getPos();
+	for (Shape &s : mTrackedShapes) {
+		vec2 mouseLocCopy = mouseLoc;
+		int pointCounter = 0;
+		while (mouseLocCopy.x < getWindowWidth()) {
+			for (cv::Point p : s.hull) {
+				if (p.x == mouseLocCopy.x && p.y == mouseLocCopy.y) {
+					pointCounter += 1;
+					console() << "counting" << endl;
+				}
+			}
+			mouseLocCopy = mouseLocCopy + vec2(1, 0);
+		}
+		if (pointCounter % 2 == 1) {
+			s.selected = true;
+			console() << "got here" << endl;
+			console() << (s.selected == true) << endl;
+			return;
 		}
 	}
 }
@@ -394,8 +423,6 @@ Shape* CeilingKinectApp::findNearestMatch(Shape trackedShape, vector<Shape> &sha
 	}
 	return closestShape;
 }
-
-//192.168.1.2
 
 float CeilingKinectApp::mapNum(float value, float istart, float istop, float ostart, float ostop) {
 	return ostart + (ostop - ostart) * ((value - istart) / (istop - istart));
