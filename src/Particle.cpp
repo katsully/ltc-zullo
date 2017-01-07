@@ -20,7 +20,7 @@ Particle::Particle(ci::vec2 location, ci::vec2 origin)
 	float diffY = mLocation.y - origin.y;
 	float diffX = mLocation.x - origin.x;
 	dist = vec2(diffX, diffY);
-	mAcceleration = vec2(0.05, 0.05);
+	mAcceleration = vec2(0, 0);
 	mVelocity = vec2(diffX/10, diffY/10 );
 }
 
@@ -41,4 +41,9 @@ void Particle::display()
 {
 	gl::color(Color(1.0, 1.0, 1.0));
 	gl::drawSolidEllipse(mLocation, 12.0, 12.0);
+}
+
+void Particle::reverseDirection()
+{
+	mVelocity *= -1;
 }

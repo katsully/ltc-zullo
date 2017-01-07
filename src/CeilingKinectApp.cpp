@@ -324,6 +324,9 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 			ci::app::console() << std::to_string(s.ID) + " background state: " + std::to_string(s.background) << endl;
 			s.background = true;
 		}
+	}	
+	if (event.getChar() == 'r') {
+		mSystem.reverse();
 	}
 }
 

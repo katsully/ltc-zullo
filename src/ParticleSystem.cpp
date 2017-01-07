@@ -27,3 +27,10 @@ void ParticleSystem::run()
 	}
 
 }
+
+void ParticleSystem::reverse()
+{
+	for (vector<Particle>::iterator it = mParticles.begin(); it != mParticles.end(); ++it) {
+		it->reverseDirection();
+	}
+}

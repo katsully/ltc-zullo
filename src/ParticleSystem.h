@@ -10,6 +10,7 @@ public:
 
 	void addParticle(ci::vec2 location);
 	void run();
+	void reverse();
 
 	ci::vec2 mOrigin;
 	

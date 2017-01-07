@@ -8,6 +8,7 @@ public:
 	void run();
 	void update();
 	void display();
+	void reverseDirection();
 
 	ci::vec2 mLocation;
 	ci::vec2 dist;
