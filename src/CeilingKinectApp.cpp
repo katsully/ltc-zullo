@@ -263,11 +263,11 @@ void CeilingKinectApp::draw()
 	gl::enableAlphaBlending();
 
 	// draw the RGB image in top left corner
-	/*gl::color(Color::white());
+	gl::color(Color::white());
 	if (mSurfaceColor) {
 		gl::TextureRef tex = gl::Texture::create(*mSurfaceColor);
 		gl::draw(tex, tex->getBounds(), Rectf(vec2(0.0f), getWindowCenter()));
-	}*/
+	}
 
 
 	// draws in the shape's outline in red, tends to add more noise
@@ -305,9 +305,11 @@ void CeilingKinectApp::draw()
 	else {
 		//mSystem.run();
 		mSystem.run();
+		gl::begin(GL_LINE_LOOP);
 		for (Particle p : mSystem.mParticles) {
-			gl::drawSolidEllipse(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)), 4.0, 4.0);
+			gl::vertex(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)));
 		}
+		gl::end();
 	}
 
 	mParams->draw();
