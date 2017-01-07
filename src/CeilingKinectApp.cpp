@@ -5,7 +5,6 @@
 #include "Kinect2.h"
 #include "CinderOpenCV.h"
 #include "Shape.h"
-#include "Osc.h"
 
 #include<math.h>
 
@@ -13,19 +12,13 @@ using namespace ci;
 using namespace ci::app;
 using namespace std;
 
-const std::string destinationHost = "172.16.224.212";	// this MUST match the ip address of the computer you are
-														// sending data to
-const std::string destinationHost2 = "192.168.1.2";		// Moon's IP address
-//const uint16_t destinationPort = 8000;
 
 class CeilingKinectApp : public App {
   public:
-	CeilingKinectApp();
 
 	void setup() override;
 	void prepareSettings(Settings* settings);
-	void keyDown( KeyEvent event ) override;
-	void mouseMove(MouseEvent event) override;
+	void keyDown(KeyEvent event) override;
 	void update() override;
 	void draw() override;
 
@@ -40,9 +33,6 @@ class CeilingKinectApp : public App {
 	// colors for the shapes
 	vector<Color> shapeColors;
 	int colorIdx;
-
-	osc::SenderUdp mSender;
-	osc::ReceiverUdp mReceiver;
 
 private:
 	Kinect2::DeviceRef mDevice;
@@ -91,27 +81,6 @@ private:
 	float mapNum(float value, float istart, float istop, float ostart, float ostop);
 };
 
-CeilingKinectApp::CeilingKinectApp() : App(), mReceiver(8000), mSender(9000, destinationHost2, 12345)
-{	
-	/*mSender.bind();
-	mReceiver.bind();
-	mReceiver.listen();
-	mReceiver.setListener("/bodies",
-		[](const osc::Message &message) {
-		std::string s = "Float: " + std::to_string(message[0].flt());
-	});*/
-}
-
-void CeilingKinectApp::mouseMove(MouseEvent event)
-{
-	/*mCurrentMousePosition = event.getPos();
-	osc::Message msg("/blobs");
-	msg.append(mCurrentMousePosition.x);
-	msg.append(mCurrentMousePosition.y);
-
-	mSender.send(msg);*/
-}
-
 void CeilingKinectApp::prepareSettings(Settings* settings)
 {
 	settings->setFrameRate(60.0f);
@@ -122,8 +91,6 @@ void CeilingKinectApp::setup()
 {
 	console() << "x window size " << getWindowSize().x << endl;
 	console() << "y windows size " << getWindowSize().y << endl;
-
-	mSender.bind();
 
 	mFrameRate = 0.0f;
 	mFullScreen = false;
@@ -292,6 +259,7 @@ void CeilingKinectApp::draw()
 	gl::setMatricesWindow(getWindowSize());
 	gl::enableAlphaBlending();
 
+	// draw the RGB image in top left corner
 	/*gl::color(Color::white());
 	if (mSurfaceColor) {
 		gl::TextureRef tex = gl::Texture::create(*mSurfaceColor);
@@ -299,41 +267,28 @@ void CeilingKinectApp::draw()
 	}*/
 
 
-	//int idx = 0;
-	//for (ContourVector::iterator iter = mContours.begin(); iter != mContours.end(); ++iter) {
-	//	gl::begin(GL_LINE_LOOP);
-	//	for (vector<cv::Point>::iterator pt = iter->begin(); pt != iter->end(); ++pt) {
-	//		//gl::color(shapeColors[idx]);
-	//		gl::color(Color(1.0, 0.0, 0.0));
-	//		gl::vertex(fromOcv(*pt));
-	//	}
-	//	gl::end();
-	//	idx++;
-	//}
+	// draws in the shape's outline in red, tends to add more noise
+	/*int idx = 0;
+	for (ContourVector::iterator iter = mContours.begin(); iter != mContours.end(); ++iter) {
+		gl::begin(GL_LINE_LOOP);
+		for (vector<cv::Point>::iterator pt = iter->begin(); pt != iter->end(); ++pt) {
+			//gl::color(shapeColors[idx]);
+			gl::color(Color(1.0, 0.0, 0.0));
+			gl::vertex(fromOcv(*pt));
+		}
+		gl::end();
+		idx++;
+	}*/
 
 	// draw shapes
 	for (Shape s: mTrackedShapes) {
 		if (!s.background) {
-			//console() << "shape~~~~~~~~" << endl;
-			gl::begin(GL_LINE_LOOP);
+			gl::begin(GL_TRIANGLE_STRIP);
 			for (int j = 0; j < s.hull.size(); j++) {
 				gl::color(s.color);
 				gl::vertex(fromOcv(s.hull[j]));
 			}
 			gl::end();
-		}
-	}
-
-	int idx = 0;
-	for (Shape s : mTrackedShapes) {
-		if (s.background == false) {
-			osc::Message msg("/kinect");
-			msg.append(idx);
-			msg.append(mapNum(s.centroid.x, 0, getWindowSize().x, 0.0, 1.0));
-			msg.append(1-mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
-			//console() << msg << endl;
-			mSender.send(msg);
-			idx++;
 		}
 	}
 
@@ -352,23 +307,6 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 			s.background = true;
 		}
 	}
-	// send each detected shape and the x y coordinates of its centroid to the other kinect
-	//else if (event.getChar() == 'p') {
-	//	console() << "made it here" << endl;
-	//	osc::Message msg("/kinect/blobs");
-	//	for (Shape s : mTrackedShapes) {
-	//		if (s.background == false) {
-	//			msg.append(s.ID);
-	//			//msg.append(s.centroid.x);
-	//			msg.append(mapNum(s.centroid.x, 0, getWindowSize().x, 0.0, 1.0));
-	//			//msg.append(s.centroid.y);
-	//			msg.append(mapNum(s.centroid.y, 0, getWindowSize().y, 0.0, 1.0));
-	//			console() << msg << endl;
-	//			console() << "data sent" << endl;
-	//		}
-	//	}
-	//	mSender.send(msg);
-	//}
 }
 
 cv::Mat CeilingKinectApp::removeBlack(cv::Mat input, short nearLimit, short farLimit)
