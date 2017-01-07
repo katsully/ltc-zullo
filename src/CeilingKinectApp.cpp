@@ -5,6 +5,7 @@
 #include "Kinect2.h"
 #include "CinderOpenCV.h"
 #include "Shape.h"
+#include "ParticleSystem.h"
 
 #include<math.h>
 
@@ -76,10 +77,13 @@ private:
 
 	bool drawOutlines = true;
 
+	ParticleSystem mSystem;
+
 	cv::Mat removeBlack(cv::Mat input, short nearLimit, short farLimit);
 	vector<Shape> getEvaluationSet(ContourVector rawContours, int minimalArea, int maxArea);
 	Shape* findNearestMatch(Shape trackedShape, vector<Shape> &shapes, float maximumDistance);
 	float mapNum(float value, float istart, float istop, float ostart, float ostop);
+	void createParticles(Shape selectedShape);
 };
 
 void CeilingKinectApp::prepareSettings(Settings* settings)
@@ -298,6 +302,12 @@ void CeilingKinectApp::draw()
 			}
 		}
 	}
+	else {
+		//mSystem.run();
+		for (Particle p : mSystem.mParticles) {
+			gl::drawSolidEllipse(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)), 4.0, 4.0);
+		}
+	}
 
 	mParams->draw();
 }
@@ -335,8 +345,17 @@ void CeilingKinectApp::mouseDown(MouseEvent event)
 			s.selected = true;
 			drawOutlines = false;
 			console() << "got here" << endl;
+			createParticles(s);
 			return;
 		}
+	}
+}
+
+void CeilingKinectApp::createParticles(Shape selectedShape)
+{
+	mSystem =  ParticleSystem(vec2(selectedShape.centroid.x, selectedShape.centroid.y));
+	for (cv::Point p : selectedShape.hull) {
+		mSystem.addParticle(vec2(p.x, p.y));
 	}
 }
 
