@@ -74,7 +74,7 @@ private:
 	vector<Shape> mShapes;
 	vector<Shape> mTrackedShapes;	// store tracked shapes
 
-	ivec2 mCurrentMousePosition;
+	bool drawOutlines = true;
 
 	cv::Mat removeBlack(cv::Mat input, short nearLimit, short farLimit);
 	vector<Shape> getEvaluationSet(ContourVector rawContours, int minimalArea, int maxArea);
@@ -280,20 +280,22 @@ void CeilingKinectApp::draw()
 	}*/
 
 	// draw shapes
-	for (Shape s: mTrackedShapes) {
-		if (!s.background) {
-			gl::begin(GL_TRIANGLE_STRIP);
-			for (int j = 0; j < s.hull.size(); j++) {
-				if (s.selected == true) {
-					gl::color(Color(1, 1, 1));
-					console() << "drawing white" << endl;
+	if ( drawOutlines ) {
+		for (Shape s : mTrackedShapes) {
+			if (!s.background) {
+				gl::begin(GL_TRIANGLE_STRIP);
+				for (int j = 0; j < s.hull.size(); j++) {
+					if (s.selected == true) {
+						gl::color(Color(1, 1, 1));
+						console() << "drawing white" << endl;
+					}
+					else {
+						gl::color(s.color);
+					}
+					gl::vertex(fromOcv(s.hull[j]));
 				}
-				else {
-					gl::color(s.color);
-				}
-				gl::vertex(fromOcv(s.hull[j]));
+				gl::end();
 			}
-			gl::end();
 		}
 	}
 
@@ -331,8 +333,8 @@ void CeilingKinectApp::mouseDown(MouseEvent event)
 		}
 		if (pointCounter % 2 == 1) {
 			s.selected = true;
+			drawOutlines = false;
 			console() << "got here" << endl;
-			console() << (s.selected == true) << endl;
 			return;
 		}
 	}
