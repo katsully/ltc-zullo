@@ -11,7 +11,6 @@ public:
 	void addParticle(ci::vec2 location);
 	void run();
 
-private:
 	ci::vec2 mOrigin;
 	
 };

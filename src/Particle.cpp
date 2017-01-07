@@ -12,24 +12,29 @@ Particle::Particle()
 {
 }
 
-Particle::Particle(ci::vec2 location)
+Particle::Particle(ci::vec2 location, ci::vec2 origin)
 {
-	// fill all variables
-	//mAcceleration = vec2(0.0, 0.05);
-	//mVelocity = vec2(randFloat(-1, 1), randFloat(-1.0, 0.0) );
 	mLocation = location;
+
+	// get distance between point and centroid of the shape
+	float diffY = mLocation.y - origin.y;
+	float diffX = mLocation.x - origin.x;
+	dist = vec2(diffX, diffY);
+	mAcceleration = vec2(0.05, 0.05);
+	mVelocity = vec2(diffX/10, diffY/10 );
 }
 
 void Particle::run()
 {
 	update();
-	display();
+	//display();
 }
 
 // Method to update location
 void Particle::update()
 {
-
+	mVelocity += mAcceleration;
+	mLocation += mVelocity;
 }
 
 void Particle::display()

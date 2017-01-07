@@ -304,6 +304,7 @@ void CeilingKinectApp::draw()
 	}
 	else {
 		//mSystem.run();
+		mSystem.run();
 		for (Particle p : mSystem.mParticles) {
 			gl::drawSolidEllipse(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)), 4.0, 4.0);
 		}

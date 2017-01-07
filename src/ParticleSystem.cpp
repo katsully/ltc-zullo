@@ -7,7 +7,6 @@ using namespace std;
 
 ParticleSystem::ParticleSystem()
 {
-
 }
 
 ParticleSystem::ParticleSystem(ci::vec2 location)
@@ -18,10 +17,13 @@ ParticleSystem::ParticleSystem(ci::vec2 location)
 
 void ParticleSystem::addParticle(ci::vec2 location)
 {
-	mParticles.push_back(Particle(location));
+	mParticles.push_back(Particle(location, mOrigin));
 }
 
 void ParticleSystem::run()
 {
+	for (vector<Particle>::iterator it = mParticles.begin(); it != mParticles.end(); ++it) {
+		it->run();
+	}
 
 }
