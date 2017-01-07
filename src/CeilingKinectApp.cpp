@@ -20,7 +20,6 @@ class CeilingKinectApp : public App {
 	void setup() override;
 	void prepareSettings(Settings* settings);
 	void keyDown(KeyEvent event) override;
-	void mouseDown(MouseEvent event) override;
 	void update() override;
 	void draw() override;
 
@@ -327,32 +326,54 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 			s.background = true;
 		}
 	}	
-	if (event.getChar() == 'r') {
+	if (event.getChar() == 'p') {
 		mSystem.reverse();
 	}
-}
-
-void CeilingKinectApp::mouseDown(MouseEvent event)
-{
-	vec2 mouseLoc = event.getPos();
-	for (Shape &s : mTrackedShapes) {
-		vec2 mouseLocCopy = mouseLoc;
-		int pointCounter = 0;
-		while (mouseLocCopy.x < getWindowWidth()) {
-			for (cv::Point p : s.hull) {
-				if (p.x == mouseLocCopy.x && p.y == mouseLocCopy.y) {
-					pointCounter += 1;
-					console() << "counting" << endl;
-				}
+	if (event.getChar() == 'd') {
+		drawOutlines = !drawOutlines;
+	}
+	if (event.getChar() == 'r') {
+		for (Shape &s : mTrackedShapes) {
+			if (s.color == Color(1, 0, 0)) {
+				int idx = int(event.getChar());
+				s.selected = true;
+				drawOutlines = false;
+				console() << "get here" << endl;
+				createParticles(s);
 			}
-			mouseLocCopy = mouseLocCopy + vec2(1, 0);
 		}
-		if (pointCounter % 2 == 1) {
-			s.selected = true;
-			drawOutlines = false;
-			console() << "got here" << endl;
-			createParticles(s);
-			return;
+	}
+	if (event.getChar() == 'y') {
+		for (Shape &s : mTrackedShapes) {
+			if (s.color == Color(1, 1, 0)) {
+				int idx = int(event.getChar());
+				s.selected = true;
+				drawOutlines = false;
+				console() << "get here" << endl;
+				createParticles(s);
+			}
+		}
+	}
+	if (event.getChar() == 'g') {
+		for (Shape &s : mTrackedShapes) {
+			if (s.color == Color(0, 1, 0)) {
+				int idx = int(event.getChar());
+				s.selected = true;
+				drawOutlines = false;
+				console() << "get here" << endl;
+				createParticles(s);
+			}
+		}
+	}
+	if (event.getChar() == 'b') {
+		for (Shape &s : mTrackedShapes) {
+			if (s.color == Color(0, 0, 1)) {
+				int idx = int(event.getChar());
+				s.selected = true;
+				drawOutlines = false;
+				console() << "get here" << endl;
+				createParticles(s);
+			}
 		}
 	}
 }
