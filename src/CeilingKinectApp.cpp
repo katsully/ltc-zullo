@@ -298,10 +298,10 @@ void CeilingKinectApp::draw()
 	else {
 		for (Shape s : mTrackedShapes) {
 			if (s.selected) {
-				mSystem.run(vec2(s.centroid.x, s.centroid.y));
+				mSystem.run(s.hull);
 			}
 		}
-		//gl::begin(GL_LINE_LOOP);
+		//gl::begin(GL_TRIANGLE_STRIP);
 		//gl::lineWidth(6.0);
 		for (Particle p : mSystem.mParticles) {
 			//gl::vertex(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)));
@@ -327,7 +327,8 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 	if (event.getChar() == 'p') {
 		for (Shape s : mTrackedShapes) {
 			if (s.selected == true) {
-				mSystem.reverse();
+			//	mSystem.reverse();
+				mSystem.reversing = true;
 				return;
 			}
 		}

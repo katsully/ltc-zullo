@@ -6,7 +6,9 @@ public:
 	Particle(ci::vec2 location, ci::vec2 origin);
 
 	void run(ci::vec2 offset);
-	void update(ci::vec2 newCentroid);
+	void run();
+	void update();
+	void update(ci::vec2 offset);
 	void display();
 	void reverseDirection();
 

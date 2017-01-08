@@ -21,22 +21,34 @@ Particle::Particle(ci::vec2 location, ci::vec2 origin)
 	float diffY = mLocation.y - origin.y;
 	float diffX = mLocation.x - origin.x;
 	dist = vec2(diffX, diffY);
-	mAcceleration = vec2(0, 0);
-	mVelocity = vec2(diffX/15, diffY/15);
+	//mAcceleration = vec2(0.01, 0.01);
+	mVelocity = vec2(diffX/25, diffY/25);
 }
 
-void Particle::run(ci::vec2 newCentroid)
+void Particle::run(vec2 offset)
 {
-	update(newCentroid);
+	update(offset);
+	//display();
+}
+
+void Particle::run()
+{
+	update();
 	//display();
 }
 
 // Method to update location
-void Particle::update(ci::vec2 offset)
+void Particle::update()
 {
 	mVelocity += mAcceleration;
 	mLocation += mVelocity;
-	mLocation += offset;
+	//mLocation += offset;
+}
+
+void Particle::update(vec2 offset)
+{
+	mVelocity = offset;
+	mLocation += mVelocity;
 }
 
 void Particle::display()
