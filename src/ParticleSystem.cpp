@@ -11,10 +11,11 @@ ParticleSystem::ParticleSystem()
 {
 }
 
-ParticleSystem::ParticleSystem(ci::vec2 location)
+ParticleSystem::ParticleSystem(ci::vec2 location, cinder::Color c)
 {
 	mOrigin = location;
 	mParticles = vector<Particle>();
+	color = c;
 }
 
 void ParticleSystem::addParticle(ci::vec2 location)

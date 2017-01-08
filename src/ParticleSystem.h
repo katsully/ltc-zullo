@@ -5,7 +5,7 @@
 class ParticleSystem {
 public:
 	ParticleSystem();
-	ParticleSystem(ci::vec2 location);
+	ParticleSystem(ci::vec2 location, cinder::Color c);
 
 	std::vector<Particle> mParticles;
 
@@ -15,5 +15,5 @@ public:
 
 	ci::vec2 mOrigin;
 	bool reversing = false;
-	
+	cinder::Color color;
 };

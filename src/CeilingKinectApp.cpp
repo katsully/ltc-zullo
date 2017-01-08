@@ -305,6 +305,7 @@ void CeilingKinectApp::draw()
 		//gl::lineWidth(6.0);
 		for (Particle p : mSystem.mParticles) {
 			//gl::vertex(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)));
+			gl::color(mSystem.color);
 			gl::drawSolidEllipse(fromOcv(cv::Point(p.mLocation.x, p.mLocation.y)), 4.0, 4.0);
 		}
 		//gl::end();
@@ -337,6 +338,9 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 		drawOutlines = !drawOutlines;
 	}
 	if (event.getChar() == 'r') {
+		for (vector<Shape>::iterator it = mTrackedShapes.begin(); it != mTrackedShapes.end(); ++it) {
+			it->selected = false;
+		}
 		for (Shape &s : mTrackedShapes) {
 			if (s.color == Color(1, 0, 0)) {
 				int idx = int(event.getChar());
@@ -348,6 +352,9 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 		}
 	}
 	if (event.getChar() == 'y') {
+		for (vector<Shape>::iterator it = mTrackedShapes.begin(); it != mTrackedShapes.end(); ++it) {
+			it->selected = false;
+		}
 		for (Shape &s : mTrackedShapes) {
 			if (s.color == Color(1, 1, 0)) {
 				int idx = int(event.getChar());
@@ -359,6 +366,9 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 		}
 	}
 	if (event.getChar() == 'g') {
+		for (vector<Shape>::iterator it = mTrackedShapes.begin(); it != mTrackedShapes.end(); ++it) {
+			it->selected = false;
+		}
 		for (Shape &s : mTrackedShapes) {
 			if (s.color == Color(0, 1, 0)) {
 				int idx = int(event.getChar());
@@ -370,6 +380,9 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 		}
 	}
 	if (event.getChar() == 'b') {
+		for (vector<Shape>::iterator it = mTrackedShapes.begin(); it != mTrackedShapes.end(); ++it) {
+			it->selected = false;
+		}
 		for (Shape &s : mTrackedShapes) {
 			if (s.color == Color(0, 0, 1)) {
 				int idx = int(event.getChar());
@@ -384,9 +397,10 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 
 void CeilingKinectApp::createParticles(Shape selectedShape)
 {
-	mSystem =  ParticleSystem(vec2(selectedShape.centroid.x, selectedShape.centroid.y));
+	mSystem =  ParticleSystem(vec2(selectedShape.centroid.x, selectedShape.centroid.y), selectedShape.color);
 	for (cv::Point p : selectedShape.hull) {
 		mSystem.addParticle(vec2(p.x, p.y));
+		console() << "new particles" << endl;
 	}
 }
 
