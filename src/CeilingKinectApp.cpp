@@ -262,11 +262,11 @@ void CeilingKinectApp::draw()
 	gl::enableAlphaBlending();
 
 	// draw the RGB image in top left corner
-	gl::color(Color::white());
+	/*gl::color(Color::white());
 	if (mSurfaceColor) {
 		gl::TextureRef tex = gl::Texture::create(*mSurfaceColor);
 		gl::draw(tex, tex->getBounds(), Rectf(vec2(0.0f), getWindowCenter()));
-	}
+	}*/
 
 
 	// draws in the shape's outline in red, tends to add more noise
@@ -288,13 +288,7 @@ void CeilingKinectApp::draw()
 			if (!s.background) {
 				gl::begin(GL_TRIANGLE_STRIP);
 				for (int j = 0; j < s.hull.size(); j++) {
-					if (s.selected == true) {
-						gl::color(Color(1, 1, 1));
-						console() << "drawing white" << endl;
-					}
-					else {
-						gl::color(s.color);
-					}
+					gl::color(s.color);
 					gl::vertex(fromOcv(s.hull[j]));
 				}
 				gl::end();
@@ -302,22 +296,26 @@ void CeilingKinectApp::draw()
 		}
 	}
 	else {
-		//mSystem.run();
-		mSystem.run();
-		gl::begin(GL_LINE_LOOP);
-		for (Particle p : mSystem.mParticles) {
-			gl::vertex(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)));
+		for (Shape s : mTrackedShapes) {
+			if (s.selected) {
+				mSystem.run(vec2(s.centroid.x, s.centroid.y));
+			}
 		}
-		gl::end();
+		//gl::begin(GL_LINE_LOOP);
+		//gl::lineWidth(6.0);
+		for (Particle p : mSystem.mParticles) {
+			//gl::vertex(fromOcv(cv::Point( p.mLocation.x, p.mLocation.y)));
+			gl::drawSolidEllipse(fromOcv(cv::Point(p.mLocation.x, p.mLocation.y)), 4.0, 4.0);
+		}
+		//gl::end();
 	}
 
-	mParams->draw();
+	// mParams->draw();
 }
 
 void CeilingKinectApp::keyDown( KeyEvent event )
 {
 	// remove all background shapes
-	ci::app::console() << event.getChar() << endl;
 	if (event.getChar() == 'x') {
 		cinder::app::console() << mTrackedShapes.size() << endl;
 		for (Shape &s : mTrackedShapes) {
@@ -327,7 +325,12 @@ void CeilingKinectApp::keyDown( KeyEvent event )
 		}
 	}	
 	if (event.getChar() == 'p') {
-		mSystem.reverse();
+		for (Shape s : mTrackedShapes) {
+			if (s.selected == true) {
+				mSystem.reverse();
+				return;
+			}
+		}
 	}
 	if (event.getChar() == 'd') {
 		drawOutlines = !drawOutlines;

@@ -9,7 +9,7 @@ public:
 	std::vector<Particle> mParticles;
 
 	void addParticle(ci::vec2 location);
-	void run();
+	void run(ci::vec2 newCentroid);
 	void reverse();
 
 	ci::vec2 mOrigin;

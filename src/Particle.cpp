@@ -15,26 +15,28 @@ Particle::Particle()
 Particle::Particle(ci::vec2 location, ci::vec2 origin)
 {
 	mLocation = location;
+	mOriginalLocation = origin;
 
 	// get distance between point and centroid of the shape
 	float diffY = mLocation.y - origin.y;
 	float diffX = mLocation.x - origin.x;
 	dist = vec2(diffX, diffY);
 	mAcceleration = vec2(0, 0);
-	mVelocity = vec2(diffX/10, diffY/10 );
+	mVelocity = vec2(diffX/15, diffY/15);
 }
 
-void Particle::run()
+void Particle::run(ci::vec2 newCentroid)
 {
-	update();
+	update(newCentroid);
 	//display();
 }
 
 // Method to update location
-void Particle::update()
+void Particle::update(ci::vec2 offset)
 {
 	mVelocity += mAcceleration;
 	mLocation += mVelocity;
+	mLocation += offset;
 }
 
 void Particle::display()

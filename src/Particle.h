@@ -5,8 +5,8 @@ public:
 	Particle();
 	Particle(ci::vec2 location, ci::vec2 origin);
 
-	void run();
-	void update();
+	void run(ci::vec2 offset);
+	void update(ci::vec2 newCentroid);
 	void display();
 	void reverseDirection();
 
@@ -17,4 +17,5 @@ public:
 private:
 	ci::vec2 mAcceleration;
 	ci::vec2 mVelocity;
+	ci::vec2 mOriginalLocation;
 };
